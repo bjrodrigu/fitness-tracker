@@ -1,0 +1,20 @@
+# Secrets
+application-secrets.properties
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Java / Maven
+target/
+HELP.md
+
+# Library demo files kept locally for reference (not my code)
+example.py
+reference.ipynb
+
+.DS_Store
+.idea/
+.vscode/
