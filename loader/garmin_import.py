@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Import runs and strength sessions from Garmin Connect into the training journal.
 
+The journal also syncs Garmin on a schedule once you link your account under Settings; this
+script is for a one-off import from the command line.
+
     pip install -r requirements.txt
     python garmin_import.py --dry-run          # print what would be imported
     python garmin_import.py                    # send to http://localhost:4000/api
+
+Journal login: set JOURNAL_EMAIL and JOURNAL_PASSWORD, or you'll be prompted.
 
 Garmin login: set GARMIN_EMAIL and GARMIN_PASSWORD, or you'll be prompted. MFA codes are
 prompted for. After the first login, OAuth tokens are cached in ~/.garminconnect and reused.
@@ -109,7 +114,19 @@ def fetch(garmin, since: dt.date, limit: int) -> list[dict]:
 def send(entries: list[dict], api: str) -> dict:
     import requests
 
-    res = requests.post(f"{api.rstrip('/')}/activities/import", json=entries, timeout=30)
+    base = api.rstrip("/")
+    session = requests.Session()
+    session.get(f"{base}/auth/config", timeout=30)  # sets the XSRF-TOKEN cookie
+
+    def csrf() -> dict:
+        return {"X-XSRF-TOKEN": session.cookies.get("XSRF-TOKEN", "")}
+
+    email = os.getenv("JOURNAL_EMAIL") or input("Journal email: ")
+    password = os.getenv("JOURNAL_PASSWORD") or getpass.getpass("Journal password: ")
+    login = session.post(f"{base}/auth/login", json={"email": email, "password": password}, headers=csrf(), timeout=30)
+    if login.status_code != 200:
+        raise SystemExit(f"Journal login failed ({login.status_code}).")
+    res = session.post(f"{base}/activities/import", json=entries, headers=csrf(), timeout=60)
     res.raise_for_status()
     return res.json()
 

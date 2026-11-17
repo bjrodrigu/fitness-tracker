@@ -1,5 +1,5 @@
 # docker compose up --build
-# Then open http://localhost:4000. Starts with generated sample data; no accounts needed.
+# Then open http://localhost:4000 and choose "Try the demo", or create an account.
 services:
   mongo:
     image: mongo:7.0
@@ -19,6 +19,9 @@ services:
       MONGODB_DATABASE: ${MONGODB_DATABASE:-training_journal}
       DEMO_DATA: ${DEMO_DATA:-true}
       TZ: ${TZ:-UTC}
+      # Encrypts saved Garmin tokens. Linking Garmin is off until this is set (see .env.example).
+      GARMIN_TOKEN_KEY: ${GARMIN_TOKEN_KEY:-}
+      GARMIN_SYNC_EVERY: ${GARMIN_SYNC_EVERY:-PT6H}
     depends_on:
       mongo:
         condition: service_healthy
@@ -27,6 +30,12 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+
+  # Talks to Garmin Connect for the API. No published port: only the API can reach it.
+  garmin-sync:
+    build: ./loader
+    environment:
+      TZ: ${TZ:-UTC}
 
   web:
     build: ./web
