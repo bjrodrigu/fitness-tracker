@@ -1,16 +1,19 @@
+import { lazy } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "./components/Layout";
 import Logo from "./components/Logo";
 import { useAuth } from "./lib/auth";
-import JournalPage from "./pages/JournalPage";
-import EntryPage from "./pages/EntryPage";
-import TrainingPage from "./pages/TrainingPage";
-import StrengthPage from "./pages/StrengthPage";
-import SettingsPage from "./pages/SettingsPage";
 import SignInPage from "./pages/SignInPage";
-import FoodPage from "./pages/FoodPage";
-import FoodProgressPage from "./pages/FoodProgressPage";
-import FoodGoalPage from "./pages/FoodGoalPage";
+
+// Each page loads when it's first opened, so the first screen doesn't wait for every chart.
+const TrainingPage = lazy(() => import("./pages/TrainingPage"));
+const JournalPage = lazy(() => import("./pages/JournalPage"));
+const StrengthPage = lazy(() => import("./pages/StrengthPage"));
+const EntryPage = lazy(() => import("./pages/EntryPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const FoodPage = lazy(() => import("./pages/FoodPage"));
+const FoodProgressPage = lazy(() => import("./pages/FoodProgressPage"));
+const FoodGoalPage = lazy(() => import("./pages/FoodGoalPage"));
 
 export default function App() {
   const { user, unreachable, retry } = useAuth();

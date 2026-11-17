@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useUser } from "../lib/auth";
 import Logo from "./Logo";
@@ -104,7 +104,9 @@ export default function Layout() {
             You're looking at the demo: made-up training, read-only. <Link to="/settings">Make your own journal</Link>
           </p>
         )}
-        <Outlet />
+        <Suspense fallback={<p className="state" aria-busy="true">Loading…</p>}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <nav className="tabbar" aria-label="Main">

@@ -29,6 +29,12 @@ Open http://localhost:4000 and choose **Try the demo**. The demo account is read
 | Journal | Strength |
 | --- | --- |
 | ![Journal list grouped by week](docs/screenshots/journal.png) | ![Back squat estimated max over six months](docs/screenshots/strength.png) |
+| **Food** | **Progress** |
+| ![Today's calories and macros left against the goal, then foods by meal](docs/screenshots/food.png) | ![Weight trend toward a goal, actual weekly rate and daily calories](docs/screenshots/food-progress.png) |
+
+On a phone it has a bottom tab bar and installs to the home screen:
+
+![Four phone screens: training log, today's food, searching the food database, and weight progress](docs/screenshots/phone.png)
 
 ## How it's built
 
