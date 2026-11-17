@@ -55,9 +55,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose up -d --build --wait
-      - name: Demo data is served through nginx
+      - name: Demo sign-in and data are served through nginx
         run: |
-          curl -fsS http://localhost:4000/api/stats | python3 -c "import json,sys; d=json.load(sys.stdin); assert any(w['runs'] > 0 for w in d['weeks']), d['weeks']"
+          J=/tmp/cookies
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:4000/api/stats)" = 401
+          curl -fsS -c $J http://localhost:4000/api/auth/config | grep -q '"demo":true'
+          TOKEN=$(awk '$6 == "XSRF-TOKEN" {print $7}' $J)
+          curl -fsS -b $J -c $J -X POST -H "X-XSRF-TOKEN: $TOKEN" http://localhost:4000/api/auth/demo
+          curl -fsS -b $J http://localhost:4000/api/stats | python3 -c "import json,sys; d=json.load(sys.stdin); assert any(w['runs'] > 0 for w in d['weeks']), d['weeks']"
           curl -fsS http://localhost:4000/journal | grep -q '<div id="root">'
+          curl -fsS http://localhost:4000/manifest.webmanifest | grep -q '"standalone"'
       - if: always()
         run: docker compose logs --no-color | tail -100
