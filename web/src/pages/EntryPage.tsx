@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useUser } from "../lib/auth";
 import { api } from "../lib/api";
 import type { Activity, ActivityType, Exercise } from "../lib/types";
 import { e1rm, formatDuration, formatLb, formatPace, parseDuration, toIsoDate } from "../lib/format";
@@ -80,6 +81,7 @@ export default function EntryPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const isNew = !id;
+  const readOnly = useUser().demo;
   const newType: ActivityType = params.get("type") === "STRENGTH" ? "STRENGTH" : "RUN";
 
   const [draft, setDraft] = useState<Draft | null>(isNew ? toDraft(blank(newType)) : null);
@@ -102,7 +104,7 @@ export default function EntryPage() {
 
   // Existing entries save themselves shortly after you stop typing.
   useEffect(() => {
-    if (isNew || !dirty || !draft) return;
+    if (isNew || readOnly || !dirty || !draft) return;
     const { activity, problem } = build(draft);
     if (problem) {
       setSave("error");
@@ -124,7 +126,7 @@ export default function EntryPage() {
       );
     }, 700);
     return () => clearTimeout(t);
-  }, [draft, dirty, id, isNew]);
+  }, [draft, dirty, id, isNew, readOnly]);
 
   if (loadError) return <p className="state error">Couldn't open this entry: {loadError}. <Link to="/journal">Back to the journal</Link></p>;
   if (!draft) return <p className="state">Loading…</p>;
@@ -167,7 +169,8 @@ export default function EntryPage() {
   };
 
   const status =
-    isNew ? (built.problem ?? "Not saved yet")
+    readOnly ? "Demo entries are read-only"
+    : isNew ? (built.problem ?? "Not saved yet")
     : save === "saving" || save === "pending" ? "Saving…"
     : save === "saved" ? "Saved"
     : save === "error" ? saveError
@@ -181,6 +184,7 @@ export default function EntryPage() {
         <span className={`save-state${save === "error" ? " error" : ""}`} role="status">{status}</span>
       </div>
 
+      <fieldset className="doc-body" disabled={readOnly}>
       <div className="doc-type">
         <span className={`mark ${a.type === "RUN" ? "run" : "strength"}`} />
         {a.type === "RUN" ? "Run" : "Strength session"}
@@ -355,8 +359,12 @@ export default function EntryPage() {
         </section>
       )}
 
+      </fieldset>
+
       <div className="doc-foot">
-        {isNew ? (
+        {readOnly ? (
+          <Link to="/journal" className="btn">Back to the journal</Link>
+        ) : isNew ? (
           <>
             <Link to="/journal" className="btn ghost">Cancel</Link>
             <button type="button" className="btn primary" disabled={!built.activity || save === "saving"} onClick={create}>

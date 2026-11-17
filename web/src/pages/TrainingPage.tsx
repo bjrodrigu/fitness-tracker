@@ -30,8 +30,8 @@ export default function TrainingPage() {
 
       {empty ? (
         <p className="state">
-          Nothing logged in the last 16 weeks. <Link to="/entries/new?type=RUN">Log a run</Link> or import from Garmin
-          with <code>loader/garmin_import.py</code>.
+          Nothing logged in the last 16 weeks. <Link to="/entries/new?type=RUN">Log a run</Link>, or{" "}
+          <Link to="/settings">link Garmin</Link> to bring in your runs.
         </p>
       ) : (
         <>

@@ -98,3 +98,33 @@ export interface Stats {
   lifts: LiftProgress[];
   days: Day[];
 }
+
+export interface Me {
+  id: string;
+  email: string;
+  name: string;
+  /** The shared, read-only sample account. */
+  demo: boolean;
+}
+
+export interface AuthConfig {
+  demo: boolean;
+}
+
+export type GarminSyncStatus = "OK" | "NEEDS_RELINK" | "FAILED";
+
+export interface GarminStatus {
+  /** False when the server has no GARMIN_TOKEN_KEY. */
+  available: boolean;
+  linked: boolean;
+  linkedAt: string | null;
+  lastSyncAt: string | null;
+  lastSyncStatus: GarminSyncStatus | null;
+  lastSyncMessage: string | null;
+  lastSyncNew: number | null;
+}
+
+export interface GarminLinkResponse {
+  needsCode: boolean;
+  status: GarminStatus;
+}

@@ -1,25 +1,53 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
-import { useAsync } from "../lib/useAsync";
-import { api } from "../lib/api";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { useUser } from "../lib/auth";
+import Logo from "./Logo";
 
-function Logo() {
+/* Tab bar icons, 24px, drawn on a 24 grid with a 1.75 stroke. */
+const icons = {
+  training: (
+    <path d="M4 20V13M10 20V8M16 20v-5M22 20V4" />
+  ),
+  journal: (
+    <path d="M6 3.5h11a1.5 1.5 0 0 1 1.5 1.5v15a.5.5 0 0 1-.5.5H6.5A1.5 1.5 0 0 1 5 19V4.5a1 1 0 0 1 1-1ZM9 8h6M9 12h6M9 16h3" />
+  ),
+  strength: (
+    <path d="M3 12h18M6 8v8M3.5 9.5v5M18 8v8M20.5 9.5v5" />
+  ),
+  settings: (
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" />
+    </>
+  ),
+  plus: <path d="M12 5v14M5 12h14" />,
+};
+
+function Icon({ name }: { name: keyof typeof icons }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="7" fill="var(--ink)" />
-      <rect x="7" y="17" width="4" height="8" rx="1" fill="var(--run)" />
-      <rect x="14" y="11" width="4" height="14" rx="1" fill="var(--run)" />
-      <rect x="21" y="7" width="4" height="18" rx="1" fill="var(--lift)" />
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {icons[name]}
     </svg>
   );
 }
 
 export default function Layout() {
-  // Only used to say when the journal is showing generated sample entries.
-  const { data } = useAsync(() => api.list(), []);
-  const demo = data?.some((a) => a.source === "demo");
+  const user = useUser();
+  const location = useLocation();
+  const [sheet, setSheet] = useState(false);
+
+  // Close the "log" sheet whenever the page changes.
+  useEffect(() => setSheet(false), [location.pathname, location.search]);
+  useEffect(() => {
+    if (!sheet) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSheet(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheet]);
 
   return (
-    <div className="shell">
+    <div className={`shell${user.demo ? " is-demo" : ""}`}>
       <aside className="sidebar">
         <NavLink to="/training" className="wordmark">
           <Logo />
@@ -33,27 +61,77 @@ export default function Layout() {
             <NavLink to="/strength">Strength</NavLink>
           </div>
         </nav>
-        <div>
-          <div className="nav-group-label">Add</div>
+        {!user.demo && (
+          <div>
+            <div className="nav-group-label">Add</div>
+            <div className="nav">
+              <Link to="/entries/new?type=RUN">
+                <span className="mark run" /> Log a run
+              </Link>
+              <Link to="/entries/new?type=STRENGTH">
+                <span className="mark strength" /> Log a lift
+              </Link>
+            </div>
+          </div>
+        )}
+        <div className="sidebar-foot">
+          {user.demo && <p>Showing generated sample data. Nothing here is a real person's training.</p>}
           <div className="nav">
-            <Link to="/entries/new?type=RUN">
-              <span className="mark run" /> Log a run
-            </Link>
-            <Link to="/entries/new?type=STRENGTH">
-              <span className="mark strength" /> Log a lift
-            </Link>
+            <NavLink to="/settings">
+              <span className="avatar" aria-hidden="true">{user.name.slice(0, 1).toUpperCase()}</span>
+              {user.demo ? "Demo" : user.name}
+            </NavLink>
           </div>
         </div>
-        <div className="sidebar-foot">
-          {demo && <p>Showing generated sample data. Nothing here is a real person's training.</p>}
-          <p>
-            <a href="/api/docs">API docs</a>
-          </p>
-        </div>
       </aside>
+
+      <header className="appbar">
+        <NavLink to="/training" className="wordmark">
+          <Logo />
+          Training Journal
+        </NavLink>
+        {user.demo && <span className="chip">Demo</span>}
+      </header>
+
       <main className="main">
+        {user.demo && (
+          <p className="demo-note">
+            You're looking at the demo: made-up training, read-only. <Link to="/settings">Make your own journal</Link>
+          </p>
+        )}
         <Outlet />
       </main>
+
+      <nav className="tabbar" aria-label="Main">
+        <NavLink to="/training"><Icon name="training" /><span>Training</span></NavLink>
+        <NavLink to="/journal"><Icon name="journal" /><span>Journal</span></NavLink>
+        {user.demo ? null : (
+          <button type="button" className="tab-log" aria-haspopup="dialog" aria-expanded={sheet}
+            onClick={() => setSheet(true)}>
+            <span className="tab-log-ring"><Icon name="plus" /></span>
+            <span>Log</span>
+          </button>
+        )}
+        <NavLink to="/strength"><Icon name="strength" /><span>Strength</span></NavLink>
+        <NavLink to="/settings"><Icon name="settings" /><span>You</span></NavLink>
+      </nav>
+
+      {sheet && (
+        <div className="sheet-backdrop" onClick={() => setSheet(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label="Log an entry" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-grip" aria-hidden="true" />
+            <Link to="/entries/new?type=RUN" className="sheet-option" autoFocus>
+              <span className="mark run" />
+              <span><b>Log a run</b><small>Distance, time, how it felt</small></span>
+            </Link>
+            <Link to="/entries/new?type=STRENGTH" className="sheet-option">
+              <span className="mark strength" />
+              <span><b>Log a lift</b><small>Exercises, sets, reps and weight</small></span>
+            </Link>
+            <button type="button" className="btn ghost block" onClick={() => setSheet(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
