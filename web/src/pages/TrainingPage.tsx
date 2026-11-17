@@ -1,3 +1,4 @@
+import TrainingSwitch from "../components/TrainingSwitch";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAsync } from "../lib/useAsync";
@@ -17,6 +18,7 @@ export default function TrainingPage() {
 
   return (
     <>
+      <TrainingSwitch />
       <header className="page-head">
         <div>
           <h1>Training</h1>

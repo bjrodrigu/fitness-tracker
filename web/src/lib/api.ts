@@ -1,4 +1,7 @@
-import type { Activity, ActivityType, AuthConfig, GarminLinkResponse, GarminStatus, Me, Stats } from "./types";
+import type {
+  Activity, ActivityType, AuthConfig, FoodEntry, GarminLinkResponse, GarminStatus, GoalProfile, GoalSuggestion, Me,
+  NutritionGoal, NutritionReport, Stats,
+} from "./types";
 
 /** Fired when the server says the session is gone, so the app can show the sign-in screen. */
 export const SIGNED_OUT_EVENT = "journal:signed-out";
@@ -85,4 +88,19 @@ export const garmin = {
   code: (code: string) => post<GarminLinkResponse>("/api/garmin/link/code", { code }),
   sync: () => post<GarminStatus>("/api/garmin/sync"),
   unlink: () => request<void>("/api/garmin/link", { method: "DELETE" }),
+};
+
+export const nutrition = {
+  day: (date: string) => request<FoodEntry[]>(`/api/food?date=${date}`),
+  recent: () => request<FoodEntry[]>("/api/food/recent"),
+  add: (f: FoodEntry) => post<FoodEntry>("/api/food", f),
+  update: (id: string, f: FoodEntry) => request<FoodEntry>(`/api/food/${id}`, { method: "PUT", body: JSON.stringify(f) }),
+  remove: (id: string) => request<void>(`/api/food/${id}`, { method: "DELETE" }),
+  weigh: (date: string, weightLb: number) =>
+    request<unknown>(`/api/weights/${date}`, { method: "PUT", body: JSON.stringify({ weightLb }) }),
+  unweigh: (date: string) => request<void>(`/api/weights/${date}`, { method: "DELETE" }),
+  report: (days = 56) => request<NutritionReport>(`/api/nutrition?days=${days}`),
+  saveGoal: (g: NutritionGoal) =>
+    request<NutritionGoal>("/api/nutrition/goal", { method: "PUT", body: JSON.stringify(g) }),
+  suggest: (p: GoalProfile) => post<GoalSuggestion>("/api/nutrition/suggest", p),
 };

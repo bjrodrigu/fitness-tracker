@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useUser } from "../lib/auth";
 import Logo from "./Logo";
+import { mealForNow } from "../lib/food";
 
 /* Tab bar icons, 24px, drawn on a 24 grid with a 1.75 stroke. */
 const icons = {
@@ -11,8 +12,8 @@ const icons = {
   journal: (
     <path d="M6 3.5h11a1.5 1.5 0 0 1 1.5 1.5v15a.5.5 0 0 1-.5.5H6.5A1.5 1.5 0 0 1 5 19V4.5a1 1 0 0 1 1-1ZM9 8h6M9 12h6M9 16h3" />
   ),
-  strength: (
-    <path d="M3 12h18M6 8v8M3.5 9.5v5M18 8v8M20.5 9.5v5" />
+  food: (
+    <path d="M7 3v7a2 2 0 0 0 2 2v9M11 3v7a2 2 0 0 1-2 2M9 3v6M17 21V3c-2 0-3.5 2.5-3.5 6.5S15 13 17 13" />
   ),
   settings: (
     <>
@@ -59,6 +60,7 @@ export default function Layout() {
             <NavLink to="/training">Training</NavLink>
             <NavLink to="/journal">Journal</NavLink>
             <NavLink to="/strength">Strength</NavLink>
+            <NavLink to="/food">Food</NavLink>
           </div>
         </nav>
         {!user.demo && (
@@ -70,6 +72,9 @@ export default function Layout() {
               </Link>
               <Link to="/entries/new?type=STRENGTH">
                 <span className="mark strength" /> Log a lift
+              </Link>
+              <Link to={`/food?add=${mealForNow()}`}>
+                <span className="mark food" /> Log food
               </Link>
             </div>
           </div>
@@ -103,7 +108,10 @@ export default function Layout() {
       </main>
 
       <nav className="tabbar" aria-label="Main">
-        <NavLink to="/training"><Icon name="training" /><span>Training</span></NavLink>
+        {/* One tab covers Running and Strength on phones. */}
+        <Link to="/training" aria-current={/^\/(training|strength)/.test(location.pathname) ? "page" : undefined}>
+          <Icon name="training" /><span>Training</span>
+        </Link>
         <NavLink to="/journal"><Icon name="journal" /><span>Journal</span></NavLink>
         {user.demo ? null : (
           <button type="button" className="tab-log" aria-haspopup="dialog" aria-expanded={sheet}
@@ -112,7 +120,7 @@ export default function Layout() {
             <span>Log</span>
           </button>
         )}
-        <NavLink to="/strength"><Icon name="strength" /><span>Strength</span></NavLink>
+        <NavLink to="/food"><Icon name="food" /><span>Food</span></NavLink>
         <NavLink to="/settings"><Icon name="settings" /><span>You</span></NavLink>
       </nav>
 
@@ -127,6 +135,10 @@ export default function Layout() {
             <Link to="/entries/new?type=STRENGTH" className="sheet-option">
               <span className="mark strength" />
               <span><b>Log a lift</b><small>Exercises, sets, reps and weight</small></span>
+            </Link>
+            <Link to={`/food?add=${mealForNow()}`} className="sheet-option">
+              <span className="mark food" />
+              <span><b>Log food</b><small>Calories, protein, carbs and fat</small></span>
             </Link>
             <button type="button" className="btn ghost block" onClick={() => setSheet(false)}>Cancel</button>
           </div>

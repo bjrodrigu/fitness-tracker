@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 import com.fitnesstracker.journal.activity.Activity;
 import com.fitnesstracker.journal.activity.ActivityRepository;
 import com.fitnesstracker.journal.auth.AuthService;
+import com.fitnesstracker.journal.nutrition.FoodRepository;
+import com.fitnesstracker.journal.nutrition.GoalRepository;
+import com.fitnesstracker.journal.nutrition.WeightRepository;
 import com.fitnesstracker.journal.user.Role;
 import com.fitnesstracker.journal.user.User;
 import com.fitnesstracker.journal.user.UserRepository;
@@ -33,12 +36,19 @@ public class DemoDataLoader implements ApplicationRunner {
     private final ActivityRepository repo;
     private final UserRepository users;
     private final AuthService auth;
+    private final FoodRepository food;
+    private final WeightRepository weights;
+    private final GoalRepository goals;
     private final Clock clock;
 
-    public DemoDataLoader(ActivityRepository repo, UserRepository users, AuthService auth, Clock clock) {
+    public DemoDataLoader(ActivityRepository repo, UserRepository users, AuthService auth, FoodRepository food,
+            WeightRepository weights, GoalRepository goals, Clock clock) {
         this.repo = repo;
         this.users = users;
         this.auth = auth;
+        this.food = food;
+        this.weights = weights;
+        this.goals = goals;
         this.clock = clock;
     }
 
@@ -49,11 +59,18 @@ public class DemoDataLoader implements ApplicationRunner {
                 new User(null, AuthService.DEMO_EMAIL, null, "Demo runner", Role.DEMO, null, now)));
         // Sample entries made before accounts existed.
         auth.claimOwnerless(demo.id(), Criteria.where("source").is("demo"));
+        LocalDate today = LocalDate.now(clock);
+        if (food.countByUserId(demo.id()) == 0) {
+            food.saveAll(DemoNutritionGenerator.food(demo.id(), today, SEED, now));
+            weights.saveAll(DemoNutritionGenerator.weights(demo.id(), today, SEED));
+            goals.save(DemoNutritionGenerator.goal(demo.id(), today));
+            log.info("Loaded demo food log and weigh-ins.");
+        }
         if (repo.countByUserId(demo.id()) > 0) {
             log.info("Demo account already has entries.");
             return;
         }
-        var entries = DemoDataGenerator.generate(SEED, LocalDate.now(clock)).stream()
+        var entries = DemoDataGenerator.generate(SEED, today).stream()
                 .map(a -> new Activity(null, demo.id(), a.type(), a.date(), a.startTime(), a.title(), a.notes(),
                         a.effort(), a.durationSec(), a.distanceMi(), a.avgHeartRate(), a.tags(), a.exercises(),
                         a.source(), a.externalId(), now, now))

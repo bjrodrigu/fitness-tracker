@@ -8,6 +8,9 @@ import TrainingPage from "./pages/TrainingPage";
 import StrengthPage from "./pages/StrengthPage";
 import SettingsPage from "./pages/SettingsPage";
 import SignInPage from "./pages/SignInPage";
+import FoodPage from "./pages/FoodPage";
+import FoodProgressPage from "./pages/FoodProgressPage";
+import FoodGoalPage from "./pages/FoodGoalPage";
 
 export default function App() {
   const { user, unreachable, retry } = useAuth();
@@ -60,6 +63,9 @@ export default function App() {
         <Route path="/journal" element={<JournalPage />} />
         <Route path="/strength" element={<StrengthPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/food" element={<FoodPage />} />
+        <Route path="/food/progress" element={<FoodProgressPage />} />
+        <Route path="/food/goal" element={<FoodGoalPage />} />
         <Route path="/entries/new" element={user.demo ? <Navigate to="/journal" replace /> : <EntryPage />} />
         <Route path="/entries/:id" element={<EntryPage />} />
         <Route path="*" element={<p className="state">There's no page here. <a href="/training">Go to Training</a>.</p>} />

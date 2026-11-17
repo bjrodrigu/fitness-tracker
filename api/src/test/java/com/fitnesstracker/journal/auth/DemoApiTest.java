@@ -28,6 +28,15 @@ class DemoApiTest extends ApiTestBase {
         assertThat(me.getBody()).containsEntry("demo", true);
 
         assertThat(c.getList("/api/activities").getBody()).hasSizeGreaterThan(50);
+        var nutrition = c.get("/api/nutrition", Map.class).getBody();
+        assertThat((Map<String, Object>) nutrition.get("goal")).containsEntry("direction", "LOSE");
+        assertThat((Map<String, Object>) nutrition.get("summary")).containsKey("weeklyRateLb");
+        assertThat(c.getList("/api/food/recent").getBody()).isNotEmpty();
+        // The calculator saves nothing, so the demo may use it; saving food isn't allowed.
+        assertThat(c.post("/api/nutrition/suggest", Map.of("sex", "FEMALE", "age", 30, "heightIn", 65, "weightLb", 150,
+                "activity", "LIGHT", "direction", "MAINTAIN"), Map.class).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(c.post("/api/food", Map.of("date", "2026-11-10", "meal", "LUNCH", "name", "X", "servings", 1,
+                "calories", 100), Map.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         var write = c.post("/api/activities", Map.of("type", "RUN", "date", "2026-11-10", "title", "Mine"), Map.class);
         assertThat(write.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(write.getBody().get("detail").toString()).contains("read-only");

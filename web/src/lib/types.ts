@@ -128,3 +128,92 @@ export interface GarminLinkResponse {
   needsCode: boolean;
   status: GarminStatus;
 }
+
+export type Meal = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK";
+export const MEALS: Meal[] = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"];
+
+export interface FoodEntry {
+  id?: string;
+  date: string;
+  meal: Meal;
+  name: string;
+  /** Nutrition below is per serving. */
+  servings: number;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  totalCalories?: number;
+  totalProteinG?: number;
+  totalCarbsG?: number;
+  totalFatG?: number;
+}
+
+export type Direction = "LOSE" | "MAINTAIN" | "GAIN";
+
+export interface NutritionGoal {
+  direction: Direction;
+  targetWeightLb: number | null;
+  weeklyRateLb: number | null;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  startDate?: string | null;
+}
+
+export interface NutritionDay {
+  date: string;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  entries: number;
+}
+
+export interface WeightPoint {
+  date: string;
+  weightLb: number;
+  trendLb: number;
+}
+
+export interface NutritionReport {
+  asOf: string;
+  goal: NutritionGoal | null;
+  days: NutritionDay[];
+  weights: WeightPoint[];
+  summary: {
+    currentLb: number | null;
+    startLb: number | null;
+    changeLb: number | null;
+    weeklyRateLb: number | null;
+    targetLb: number | null;
+    remainingLb: number | null;
+    projectedDate: string | null;
+    avgCalories7: number | null;
+    daysLogged7: number;
+  };
+}
+
+export type Sex = "FEMALE" | "MALE";
+export type ActivityLevel = "SEDENTARY" | "LIGHT" | "MODERATE" | "VERY";
+
+export interface GoalProfile {
+  sex: Sex;
+  age: number;
+  heightIn: number;
+  weightLb: number;
+  activity: ActivityLevel;
+  direction: Direction;
+  weeklyRateLb: number | null;
+}
+
+export interface GoalSuggestion {
+  maintenanceCalories: number;
+  calories: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  weeklyRateLb: number;
+  notes: string[];
+}

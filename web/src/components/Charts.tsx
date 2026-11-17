@@ -8,11 +8,12 @@ import {
   ResponsiveContainer,
   Scatter,
   ComposedChart,
+  ReferenceLine,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import type { LiftSession, Week } from "../lib/types";
+import type { LiftSession, NutritionDay, Week, WeightPoint } from "../lib/types";
 import { formatLb, formatPace, shortDate } from "../lib/format";
 
 const axis = { stroke: "var(--ink-3)", fontSize: 12, tickLine: false, axisLine: false } as const;
@@ -129,6 +130,75 @@ export function Sparkline({ values, color = "var(--lift)" }: { values: number[];
         <YAxis hide domain={["dataMin", "dataMax"]} />
         <Line dataKey="v" stroke={color} strokeWidth={1.5} dot={false} isAnimationActive={false} />
       </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+/** Weigh-ins as dots, the 7-day average as a line, and the target as a dashed line. */
+export function WeightChart({ points, target }: { points: WeightPoint[]; target: number | null }) {
+  const data = points.map((p) => ({ ...p, label: shortDate(p.date) }));
+  const values = points.flatMap((p) => [p.weightLb, p.trendLb]).concat(target != null ? [target] : []);
+  const lo = Math.floor(Math.min(...values) - 1);
+  const hi = Math.ceil(Math.max(...values) + 1);
+  return (
+    <ResponsiveContainer width="100%" height={240}>
+      <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -14 }}>
+        <CartesianGrid vertical={false} stroke="var(--rule)" />
+        <XAxis dataKey="label" {...axis} interval="preserveStartEnd" minTickGap={24} />
+        <YAxis {...axis} domain={[lo, hi]} allowDecimals={false} />
+        {target != null && (
+          <ReferenceLine y={target} stroke="var(--lift)" strokeDasharray="4 4"
+            label={{ value: `Goal ${target}`, position: "insideTopRight", fill: "var(--lift)", fontSize: 12 }} />
+        )}
+        <Tooltip
+          content={({ active, payload }) => {
+            if (!active || !payload?.length) return null;
+            const p = payload[0].payload as WeightPoint;
+            return <Tip title={shortDate(p.date)} lines={[`${p.weightLb} lb weighed`, `${p.trendLb} lb 7-day average`]} />;
+          }}
+        />
+        <Scatter dataKey="weightLb" fill="var(--ink-3)" fillOpacity={0.55} isAnimationActive={false} shape={dot} />
+        <Line dataKey="trendLb" stroke="var(--ink)" strokeWidth={2} dot={false} type="monotone" isAnimationActive={false} />
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
+function dot(props: { cx?: number; cy?: number }) {
+  return <circle cx={props.cx} cy={props.cy} r={2.5} fill="var(--ink-3)" fillOpacity={0.6} />;
+}
+
+/** Calories per day against the daily target. Days with nothing logged are left empty. */
+export function CaloriesChart({ days, target }: { days: NutritionDay[]; target: number | null }) {
+  const data = days.map((d) => ({ ...d, label: shortDate(d.date), value: d.entries ? d.calories : null }));
+  const top = Math.max(target ?? 0, ...days.map((d) => d.calories));
+  const step = top > 3000 ? 1000 : 500;
+  const ticks = Array.from({ length: Math.ceil(top / step) + 1 }, (_, i) => i * step);
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -6 }}>
+        <CartesianGrid vertical={false} stroke="var(--rule)" />
+        <XAxis dataKey="label" {...axis} interval="preserveStartEnd" minTickGap={24} />
+        <YAxis {...axis} ticks={ticks} domain={[0, ticks[ticks.length - 1]]} />
+        <Tooltip
+          cursor={{ fill: "var(--rule)", opacity: 0.6 }}
+          content={({ active, payload }) => {
+            if (!active || !payload?.length) return null;
+            const d = payload[0].payload as NutritionDay;
+            return (
+              <Tip title={shortDate(d.date)} lines={d.entries
+                ? [`${Math.round(d.calories)} kcal`, `P ${Math.round(d.proteinG)} · C ${Math.round(d.carbsG)} · F ${Math.round(d.fatG)} g`]
+                : ["Nothing logged"]} />
+            );
+          }}
+        />
+        <Bar dataKey="value" radius={[2, 2, 0, 0]} maxBarSize={14} isAnimationActive={false}>
+          {data.map((d) => (
+            <Cell key={d.date} fill={target != null && d.calories > target * 1.05 ? "var(--fat)" : "var(--carbs)"} />
+          ))}
+        </Bar>
+        {target != null && <ReferenceLine y={target} stroke="var(--ink-2)" strokeDasharray="4 4" />}
+      </BarChart>
     </ResponsiveContainer>
   );
 }
