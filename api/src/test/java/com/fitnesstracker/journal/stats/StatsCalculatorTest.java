@@ -18,12 +18,12 @@ class StatsCalculatorTest {
     static final LocalDate TODAY = LocalDate.of(2026, 11, 18);
 
     static Activity run(String id, LocalDate date, double miles, int sec) {
-        return new Activity(id, ActivityType.RUN, date, null, "Run", null, null, sec, miles, null, null, null,
+        return new Activity(id, null, ActivityType.RUN, date, null, "Run", null, null, sec, miles, null, null, null,
                 "test", null, null, null);
     }
 
     static Activity lift(String id, LocalDate date, Exercise... exercises) {
-        return new Activity(id, ActivityType.STRENGTH, date, null, "Lift", null, null, 3600, null, null, null,
+        return new Activity(id, null, ActivityType.STRENGTH, date, null, "Lift", null, null, 3600, null, null, null,
                 List.of(exercises), "test", null, null, null);
     }
 

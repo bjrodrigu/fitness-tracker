@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fitnesstracker.journal.activity.ActivityService;
+import com.fitnesstracker.journal.auth.CurrentUser;
 
 @RestController
 @RequestMapping("/api/stats")
@@ -27,6 +28,6 @@ public class StatsController {
     public Stats stats(@RequestParam(defaultValue = "16") int weeks, @RequestParam(defaultValue = "140") int days) {
         int w = Math.min(Math.max(weeks, 1), 104);
         int d = Math.min(Math.max(days, 7), 400);
-        return StatsCalculator.compute(activities.findAll(), LocalDate.now(clock), w, d);
+        return StatsCalculator.compute(activities.findAll(CurrentUser.id()), LocalDate.now(clock), w, d);
     }
 }

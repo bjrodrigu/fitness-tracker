@@ -143,7 +143,7 @@ public final class DemoDataGenerator {
                 ? LocalTime.of(7, 30).plusMinutes(rnd.nextInt(50))
                 : rnd.nextDouble() < 0.7 ? LocalTime.of(6, 5).plusMinutes(rnd.nextInt(40))
                         : LocalTime.of(17, 45).plusMinutes(rnd.nextInt(60));
-        out.add(new Activity(null, ActivityType.RUN, date, start, title, notes, effort,
+        out.add(new Activity(null, null, ActivityType.RUN, date, start, title, notes, effort,
                 (int) Math.round(pace * distance), distance, hr, tags, List.of(), "demo", null, null, null));
     }
 
@@ -267,7 +267,7 @@ public final class DemoDataGenerator {
         if (light) {
             tags.add("deload");
         }
-        out.add(new Activity(null, ActivityType.STRENGTH, date, start, title, notes, light ? 5 : 7 + rnd.nextInt(2),
+        out.add(new Activity(null, null, ActivityType.STRENGTH, date, start, title, notes, light ? 5 : 7 + rnd.nextInt(2),
                 minutes * 60, null, null, tags, exercises, "demo", null, null, null));
     }
 

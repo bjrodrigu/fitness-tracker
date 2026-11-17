@@ -6,9 +6,10 @@ import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.Valid;
@@ -22,11 +23,16 @@ import jakarta.validation.constraints.Size;
 /**
  * One journal entry: a run or a strength session, with free-form notes.
  * Run fields (distance, heart rate) are empty for strength sessions, and exercises are empty
- * for runs.
+ * for runs. Every entry belongs to one account (userId), which is never read from or sent
+ * to the browser.
  */
 @Document("activities")
+@CompoundIndex(name = "user_date", def = "{'userId': 1, 'date': -1}")
+@CompoundIndex(name = "user_external", def = "{'userId': 1, 'externalId': 1}", unique = true,
+        partialFilter = "{ 'externalId': { $exists: true } }")
 public record Activity(
         @Id String id,
+        @JsonIgnore String userId,
         @NotNull ActivityType type,
         @NotNull LocalDate date,
         LocalTime startTime,
@@ -39,7 +45,7 @@ public record Activity(
         @Size(max = 12) List<@NotBlank @Size(max = 30) String> tags,
         @Size(max = 40) List<@Valid Exercise> exercises,
         String source,
-        @Indexed(unique = true, sparse = true) String externalId,
+        String externalId,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -66,8 +72,8 @@ public record Activity(
                 .sum();
     }
 
-    Activity withMeta(String newId, String newSource, Instant created, Instant updated) {
-        return new Activity(newId, type, date, startTime, title, notes, effort, durationSec, distanceMi,
+    Activity withMeta(String newId, String owner, String newSource, Instant created, Instant updated) {
+        return new Activity(newId, owner, type, date, startTime, title, notes, effort, durationSec, distanceMi,
                 avgHeartRate, tags, exercises, newSource, externalId, created, updated);
     }
 }

@@ -32,8 +32,10 @@ public class ActivityService {
     }
 
     /** Filtered list, newest first. Every filter is optional. */
-    public List<Activity> search(ActivityType type, LocalDate from, LocalDate to, String text, String tag) {
+    public List<Activity> search(String userId, ActivityType type, LocalDate from, LocalDate to, String text,
+            String tag) {
         List<Criteria> all = new ArrayList<>();
+        all.add(Criteria.where("userId").is(userId));
         if (type != null) {
             all.add(Criteria.where("type").is(type));
         }
@@ -58,38 +60,36 @@ public class ActivityService {
                     Criteria.where("tags").regex(p),
                     Criteria.where("exercises.name").regex(p)));
         }
-        Query q = new Query();
-        if (!all.isEmpty()) {
-            q.addCriteria(new Criteria().andOperator(all));
-        }
+        Query q = new Query(new Criteria().andOperator(all));
         return mongo.find(q.with(NEWEST_FIRST), Activity.class);
     }
 
-    public List<Activity> findAll() {
-        return repo.findAll(NEWEST_FIRST);
+    public List<Activity> findAll(String userId) {
+        return repo.findByUserId(userId, NEWEST_FIRST);
     }
 
-    public Activity get(String id) {
-        return repo.findById(id)
+    /** Someone else's entry is reported as missing, same as one that doesn't exist. */
+    public Activity get(String userId, String id) {
+        return repo.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No entry with id " + id));
     }
 
-    public Activity create(Activity a) {
+    public Activity create(String userId, Activity a) {
         Instant now = now();
         String source = a.source() == null || a.source().isBlank() ? "manual" : a.source();
-        return repo.save(a.withMeta(null, source, now, now));
+        return repo.save(a.withMeta(null, userId, source, now, now));
     }
 
-    public Activity update(String id, Activity a) {
-        Activity existing = get(id);
-        return repo.save(a.withMeta(id, existing.source(), existing.createdAt(), now()));
+    public Activity update(String userId, String id, Activity a) {
+        Activity existing = get(userId, id);
+        return repo.save(a.withMeta(id, userId, existing.source(), existing.createdAt(), now()));
     }
 
-    public void delete(String id) {
-        if (!repo.existsById(id)) {
+    public void delete(String userId, String id) {
+        if (!repo.existsByIdAndUserId(id, userId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No entry with id " + id);
         }
-        repo.deleteById(id);
+        repo.deleteByIdAndUserId(id, userId);
     }
 
     /**
@@ -97,7 +97,7 @@ public class ActivityService {
      * Notes, tags and effort already written in the journal are kept, so re-running an
      * import doesn't wipe what you wrote.
      */
-    public ImportResult importAll(List<Activity> incoming) {
+    public ImportResult importAll(String userId, List<Activity> incoming) {
         int created = 0;
         int updated = 0;
         Instant now = now();
@@ -105,10 +105,10 @@ public class ActivityService {
             if (a.externalId() == null || a.externalId().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Imported entries need an externalId");
             }
-            var existing = repo.findByExternalId(a.externalId());
+            var existing = repo.findByUserIdAndExternalId(userId, a.externalId());
             if (existing.isPresent()) {
                 Activity e = existing.get();
-                repo.save(new Activity(e.id(), a.type(), a.date(), a.startTime(), e.title(),
+                repo.save(new Activity(e.id(), userId, a.type(), a.date(), a.startTime(), e.title(),
                         e.notes() != null ? e.notes() : a.notes(),
                         e.effort() != null ? e.effort() : a.effort(),
                         a.durationSec(), a.distanceMi(), a.avgHeartRate(),
@@ -118,7 +118,7 @@ public class ActivityService {
                 updated++;
             } else {
                 String source = a.source() == null ? "import" : a.source();
-                repo.save(a.withMeta(null, source, now, now));
+                repo.save(a.withMeta(null, userId, source, now, now));
                 created++;
             }
         }

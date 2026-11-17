@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fitnesstracker.journal.auth.CurrentUser;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -35,34 +37,34 @@ public class ActivityController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String tag) {
-        return service.search(type, from, to, q, tag);
+        return service.search(CurrentUser.id(), type, from, to, q, tag);
     }
 
     @GetMapping("/{id}")
     public Activity get(@PathVariable String id) {
-        return service.get(id);
+        return service.get(CurrentUser.id(), id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Activity create(@Valid @RequestBody Activity activity) {
-        return service.create(activity);
+        return service.create(CurrentUser.id(), activity);
     }
 
     @PutMapping("/{id}")
     public Activity update(@PathVariable String id, @Valid @RequestBody Activity activity) {
-        return service.update(id, activity);
+        return service.update(CurrentUser.id(), id, activity);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id) {
-        service.delete(id);
+        service.delete(CurrentUser.id(), id);
     }
 
-    /** Bulk upsert used by the Garmin loader. Matches on externalId. */
+    /** Bulk upsert used by the command-line Garmin loader. Matches on externalId. */
     @PostMapping("/import")
     public ActivityService.ImportResult importAll(@RequestBody List<@Valid Activity> activities) {
-        return service.importAll(activities);
+        return service.importAll(CurrentUser.id(), activities);
     }
 }
