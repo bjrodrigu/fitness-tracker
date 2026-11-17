@@ -18,7 +18,7 @@ services:
       SPRING_DATA_MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-training_journal}
       DEMO_DATA: ${DEMO_DATA:-true}
-      TZ: ${TZ:-America/Los_Angeles}
+      TZ: ${TZ:-UTC}
     depends_on:
       mongo:
         condition: service_healthy

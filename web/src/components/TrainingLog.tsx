@@ -74,7 +74,7 @@ export default function TrainingLog({ days, asOf, weeks = 8 }: { days: Day[]; as
         </tbody>
       </table>
       <div className="log-legend" aria-hidden="true">
-        <span><i /> Miles, darker is longer</span>
+        <span><i /> Miles run, stronger color for longer runs</span>
         <span><i className="l" /> Strength session</span>
       </div>
     </div>
