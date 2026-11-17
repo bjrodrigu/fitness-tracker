@@ -30,6 +30,8 @@ public record FoodEntry(
         @NotNull Meal meal,
         @NotBlank @Size(max = 120) String name,
         @NotNull @DecimalMin("0.05") @DecimalMax("50") Double servings,
+        /** What one serving is, e.g. "100 g" or "1 cup (245 g)". Optional. */
+        @Size(max = 60) String servingLabel,
         @NotNull @PositiveOrZero @Max(5000) Integer calories,
         @PositiveOrZero @DecimalMax("500") Double proteinG,
         @PositiveOrZero @DecimalMax("1000") Double carbsG,
@@ -63,6 +65,6 @@ public record FoodEntry(
     }
 
     FoodEntry owned(String newId, String owner, Instant created) {
-        return new FoodEntry(newId, owner, date, meal, name.trim(), servings, calories, proteinG, carbsG, fatG, created);
+        return new FoodEntry(newId, owner, date, meal, name.trim(), servings, servingLabel, calories, proteinG, carbsG, fatG, created);
     }
 }

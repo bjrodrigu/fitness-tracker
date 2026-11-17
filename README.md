@@ -20,7 +20,7 @@ Open http://localhost:4000 and choose **Try the demo**. The demo account is read
 - **Entries:** open one and edit it in place. Changes save as you type. Runs have distance, time, pace, heart rate and effort. Strength sessions have exercises with sets of reps and weight, and show each set's estimated max.
 - **Training:** this week against recent weeks, an 8-week log of daily miles with lifting days marked, weekly mileage, average pace by week, and best efforts at 1 mile, 5K, 10K, half and full marathon.
 - **Strength:** estimated one-rep max over time for each lift (Epley formula), with the top set from each session.
-- **Food:** log what you eat by meal, with calories, protein, carbs and fat per serving. Foods you've had before come back in one tap. Each day shows what's left against your targets, and you can log your weight.
+- **Food:** log what you eat by meal, with calories, protein, carbs and fat per serving. Search a food database, or scan a package's barcode with the phone's camera, and pick an amount (a serving, a cup, grams). Foods you've had before come back in one tap. Each day shows what's left against your targets, and you can log your weight.
 - **Goals and progress:** set a goal to lose, maintain or gain, with a target weight and pace. A calculator suggests daily calories and macros (Mifflin-St Jeor for maintenance, 500 kcal a day per pound a week, protein by body weight). It won't suggest losing more than 1% of body weight a week or eating below 1,200/1,500 kcal. Progress shows weigh-ins with a 7-day average, your actual rate over the last 4 weeks, a projected date, and daily calories against the target.
 - **Accounts:** sign up with an email and password. Each account sees only its own entries.
 - **Garmin sync:** link your Garmin account under Settings and the server pulls new runs and strength sessions every 6 hours (or when you tap Sync now). Entries are matched on Garmin's activity ID, so a sync never duplicates entries or overwrites the notes you wrote.
@@ -61,6 +61,7 @@ API endpoints (OpenAPI docs at http://localhost:4000/api/docs):
 | PUT, DELETE | `/api/weights/{date}` | One weigh-in per day |
 | GET | `/api/nutrition?days=56` | Daily totals, weight with 7-day average, goal and progress |
 | PUT, POST | `/api/nutrition/goal`, `/api/nutrition/suggest` | Save the goal; work out suggested targets |
+| GET | `/api/foods/search?q=`, `/api/foods/barcode/{code}` | Search USDA and Open Food Facts; look up a barcode |
 
 Every endpoint except `/api/auth/*` needs a signed-in session, and entries are always filtered by the session's account. Distances and times are stored as numbers (miles, seconds); pace and volume are worked out from them. Stats, nutrition progress and the goal calculator are plain Java over lists (`StatsCalculator`, `Progress`, `GoalCalculator`), which keeps them easy to unit test.
 
@@ -82,6 +83,15 @@ How the login is handled:
 Only summary numbers are imported. GPS tracks, start locations and Garmin's activity names, which usually include the city, are left out. Strength sessions come in without sets, so you add those in the journal.
 
 For a one-off import from the command line, `loader/garmin_import.py --dry-run` prints what it would import, and without `--dry-run` it signs in to the journal and sends it.
+
+## Food search and barcodes
+
+The API looks foods up in two free databases and caches answers for a day:
+
+- **USDA FoodData Central** for whole foods ("banana", "chicken breast"), with household portions like "1 medium (118 g)". It needs a free key from [api.data.gov](https://api.data.gov/signup) in `FDC_API_KEY`; without one it allows only a few searches an hour.
+- **Open Food Facts** for packaged foods and barcodes. No key needed. `FOOD_COUNTRY` (default `united-states`) picks which country's products search returns.
+
+Barcode scanning uses the browser's BarcodeDetector where there is one (Chrome on Android) and the [ZXing](https://github.com/zxing-js/browser) library otherwise (Safari on iPhone), loaded only when the camera opens. Browsers only allow the camera on https or localhost, so on a phone open the app through its Tailscale https address. You can always type the numbers under the barcode instead.
 
 ## Accounts and sessions
 

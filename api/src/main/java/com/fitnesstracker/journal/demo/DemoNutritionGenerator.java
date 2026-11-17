@@ -65,7 +65,7 @@ public final class DemoNutritionGenerator {
                 for (int k = 0; k < count; k++) {
                     Food f = options.get(rnd.nextInt(options.size()));
                     double servings = meal == Meal.SNACK || rnd.nextDouble() < 0.8 ? 1 : 1.5;
-                    out.add(new FoodEntry(null, userId, d, meal, f.name(), servings, f.kcal(), f.p(), f.c(), f.f(),
+                    out.add(new FoodEntry(null, userId, d, meal, f.name(), servings, null, f.kcal(), f.p(), f.c(), f.f(),
                             now.minusSeconds(i * 86400L - meal.ordinal() * 3600L - k * 60L)));
                 }
             }

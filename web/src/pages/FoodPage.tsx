@@ -89,7 +89,9 @@ export default function FoodPage() {
                     disabled={readOnly}>
                     <span className="food-name">
                       {e.name}
-                      {e.servings !== 1 && <small> × {e.servings}</small>}
+                      {(e.servings !== 1 || e.servingLabel) && (
+                        <small> · {e.servings !== 1 ? `${e.servings} × ` : ""}{e.servingLabel ?? "serving"}</small>
+                      )}
                     </span>
                     <span className="food-kcal">{kcal(e.totalCalories ?? 0)}</span>
                     <span className="food-macros">

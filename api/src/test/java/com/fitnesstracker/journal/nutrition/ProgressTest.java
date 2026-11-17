@@ -15,7 +15,7 @@ class ProgressTest {
     static final LocalDate TODAY = LocalDate.of(2026, 11, 17);
 
     static FoodEntry food(LocalDate d, double servings, int kcal, double p) {
-        return new FoodEntry(null, "u", d, Meal.LUNCH, "Food", servings, kcal, p, 10.0, 5.0, null);
+        return new FoodEntry(null, "u", d, Meal.LUNCH, "Food", servings, null, kcal, p, 10.0, 5.0, null);
     }
 
     @Test

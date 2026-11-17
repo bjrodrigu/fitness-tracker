@@ -139,6 +139,8 @@ export interface FoodEntry {
   name: string;
   /** Nutrition below is per serving. */
   servings: number;
+  /** What one serving is, e.g. "100 g". */
+  servingLabel?: string | null;
   calories: number;
   proteinG: number;
   carbsG: number;
@@ -216,4 +218,20 @@ export interface GoalSuggestion {
   fatG: number;
   weeklyRateLb: number;
   notes: string[];
+}
+
+export interface FoodResult {
+  source: "usda" | "off";
+  id: string;
+  name: string;
+  brand: string | null;
+  barcode: string | null;
+  per100g: { kcal: number; proteinG: number; carbsG: number; fatG: number };
+  portions: { label: string; grams: number }[];
+}
+
+export interface FoodSearchResult {
+  foods: FoodResult[];
+  /** Databases that didn't answer this time. */
+  unavailable: string[];
 }

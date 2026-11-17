@@ -1,6 +1,6 @@
 import type {
   Activity, ActivityType, AuthConfig, FoodEntry, GarminLinkResponse, GarminStatus, GoalProfile, GoalSuggestion, Me,
-  NutritionGoal, NutritionReport, Stats,
+  NutritionGoal, NutritionReport, Stats, FoodResult, FoodSearchResult,
 } from "./types";
 
 /** Fired when the server says the session is gone, so the app can show the sign-in screen. */
@@ -103,4 +103,7 @@ export const nutrition = {
   saveGoal: (g: NutritionGoal) =>
     request<NutritionGoal>("/api/nutrition/goal", { method: "PUT", body: JSON.stringify(g) }),
   suggest: (p: GoalProfile) => post<GoalSuggestion>("/api/nutrition/suggest", p),
+  search: (q: string, signal?: AbortSignal) =>
+    request<FoodSearchResult>(`/api/foods/search?q=${encodeURIComponent(q)}`, { signal }),
+  barcode: (code: string) => request<FoodResult>(`/api/foods/barcode/${code}`),
 };
