@@ -1,0 +1,40 @@
+# docker compose up --build
+# Then open http://localhost:4000. Starts with generated sample data; no accounts needed.
+services:
+  mongo:
+    image: mongo:7.0
+    volumes:
+      - journal-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: ./api
+    environment:
+      # Point this at Atlas (or anything else) by setting MONGODB_URI in .env.
+      SPRING_DATA_MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-training_journal}
+      DEMO_DATA: ${DEMO_DATA:-true}
+      TZ: ${TZ:-America/Los_Angeles}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  web:
+    build: ./web
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-4000}:80"
+
+volumes:
+  journal-data:

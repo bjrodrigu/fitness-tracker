@@ -1,0 +1,7 @@
+target/
+.idea/
+.vscode/
+# Never bake credentials into the image.
+**/application-secrets.properties
+**/*.env
+.env
