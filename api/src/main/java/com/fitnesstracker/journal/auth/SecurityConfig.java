@@ -66,7 +66,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
                         // Only calculates; nothing is saved.
-                        .requestMatchers(HttpMethod.POST, "/api/nutrition/suggest").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/nutrition/suggest", "/api/parse").authenticated()
                         .requestMatchers("/api/**").hasRole(Role.USER.name())
                         .anyRequest().denyAll())
                 .exceptionHandling(e -> e

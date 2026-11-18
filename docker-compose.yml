@@ -25,6 +25,14 @@ services:
       # Food search. A free key from api.data.gov turns on USDA search properly (see .env.example).
       FDC_API_KEY: ${FDC_API_KEY:-}
       FOOD_COUNTRY: ${FOOD_COUNTRY:-united-states}
+      # Describing entries in words (see .env.example). Ollama runs on the host, outside Docker.
+      PARSE_PROVIDER: ${PARSE_PROVIDER:-ollama}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-5-5}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       mongo:
         condition: service_healthy

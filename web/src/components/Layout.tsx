@@ -63,10 +63,19 @@ export default function Layout() {
             <NavLink to="/food">Food</NavLink>
           </div>
         </nav>
+        {user.demo && (
+          <div>
+            <div className="nav-group-label">Try it</div>
+            <div className="nav">
+              <NavLink to="/tell"><span className="mark tell" /> Describe it</NavLink>
+            </div>
+          </div>
+        )}
         {!user.demo && (
           <div>
             <div className="nav-group-label">Add</div>
             <div className="nav">
+              <NavLink to="/tell"><span className="mark tell" /> Describe it</NavLink>
               <Link to="/entries/new?type=RUN">
                 <span className="mark run" /> Log a run
               </Link>
@@ -130,7 +139,11 @@ export default function Layout() {
         <div className="sheet-backdrop" onClick={() => setSheet(false)}>
           <div className="sheet" role="dialog" aria-modal="true" aria-label="Log an entry" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-grip" aria-hidden="true" />
-            <Link to="/entries/new?type=RUN" className="sheet-option" autoFocus>
+            <Link to="/tell" className="sheet-option" autoFocus>
+              <span className="mark tell" />
+              <span><b>Describe it</b><small>Type what you did or ate; check it, then save</small></span>
+            </Link>
+            <Link to="/entries/new?type=RUN" className="sheet-option">
               <span className="mark run" />
               <span><b>Log a run</b><small>Distance, time, how it felt</small></span>
             </Link>

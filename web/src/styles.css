@@ -595,3 +595,40 @@ h2 { font-size: var(--step-1); line-height: 1.3; }
 .scanner-bottom p { margin: 0 0 12px; text-align: center; }
 .scanner-manual { display: flex; gap: 8px; }
 .scanner-manual .field { flex: 1; min-height: 44px; font-size: 1rem; color: var(--ink); }
+
+/* Describe it: a message in, draft cards out. */
+.mark.tell { background: linear-gradient(135deg, var(--run) 0 33%, var(--lift) 33% 66%, var(--food) 66%); border-radius: 50%; }
+.tell { max-width: 720px; }
+.tell-form textarea { width: 100%; min-height: 96px; resize: vertical; font-size: 1rem; line-height: 1.5; }
+.tell-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 10px; }
+.tell-off, .tell-saved { padding: 12px 16px; margin: 0 0 16px; }
+.tell-saved { margin-top: 16px; }
+.tell-notes { margin: 16px 0 0; padding-left: 18px; color: var(--ink-2); }
+.tell-cards { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+.tell-card { background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--ink-3); border-radius: 10px; padding: 14px 16px; }
+.tell-card.run { border-left-color: var(--run); }
+.tell-card.lift { border-left-color: var(--lift); }
+.tell-card.food { border-left-color: var(--food); }
+.tell-card > header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.tell-card > header h2 { flex: 1; margin: 0; font-size: var(--step-0); }
+.tell-changes { margin: 0 0 12px; padding-left: 18px; color: var(--ink-2); font-size: var(--step--1); }
+.tell-card .ff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.tell-card .ff.wide { grid-column: 1 / -1; }
+.tell-exercise { padding: 8px 0; border-top: 1px solid var(--rule); }
+.tell-exercise:first-child { border-top: 0; padding-top: 0; }
+.tell-sets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.tell-set { display: inline-flex; align-items: center; gap: 4px; }
+.tell-set .field { width: 4.2em; text-align: right; min-height: 40px; }
+.tell-ingredients { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.tell-ingredients li { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.tell-ing-top { display: flex; gap: 8px; align-items: center; }
+.tell-ing-top > .field { flex: 1; min-width: 0; min-height: 40px; }
+.tell-grams { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-3); }
+.tell-grams .field { width: 4.5em; text-align: right; min-height: 40px; }
+.tell-ing-match { display: flex; gap: 8px; align-items: center; }
+.tell-ing-match select { flex: 1; min-width: 0; min-height: 40px; }
+.tell-ing-match .num { flex: none; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tell-ing-match.missing { color: var(--danger); font-size: var(--step--1); justify-content: space-between; }
+.tell-total { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; margin: 14px 0 0; font-size: var(--step--1); color: var(--ink-2); }
+.tell-total b { font-size: var(--step-0); color: var(--ink); }
+.tell-save { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }

@@ -235,3 +235,34 @@ export interface FoodSearchResult {
   /** Databases that didn't answer this time. */
   unavailable: string[];
 }
+
+/** Drafts from a message describing a workout or a meal; nothing is saved until the person keeps them. */
+export interface ParseResult {
+  drafts: Draft[];
+  notes: string[];
+  model: string;
+}
+
+export interface Draft {
+  kind: "RUN" | "LIFT" | "FOOD";
+  action: "CREATE" | "UPDATE";
+  date: string;
+  changes: string[];
+  activity: Activity | null;
+  food: FoodDraft | null;
+}
+
+export interface FoodDraft {
+  meal: Meal;
+  name: string;
+  ingredients: IngredientDraft[];
+}
+
+export interface IngredientDraft {
+  said: string;
+  amount: string | null;
+  grams: number;
+  gramsGuessed: boolean;
+  /** Best matches first; nutrition is per 100 g. */
+  options: FoodResult[];
+}

@@ -14,6 +14,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const FoodPage = lazy(() => import("./pages/FoodPage"));
 const FoodProgressPage = lazy(() => import("./pages/FoodProgressPage"));
 const FoodGoalPage = lazy(() => import("./pages/FoodGoalPage"));
+const TellPage = lazy(() => import("./pages/TellPage"));
 
 export default function App() {
   const { user, unreachable, retry } = useAuth();
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/food" element={<FoodPage />} />
         <Route path="/food/progress" element={<FoodProgressPage />} />
         <Route path="/food/goal" element={<FoodGoalPage />} />
+        <Route path="/tell" element={<TellPage />} />
         <Route path="/entries/new" element={user.demo ? <Navigate to="/journal" replace /> : <EntryPage />} />
         <Route path="/entries/:id" element={<EntryPage />} />
         <Route path="*" element={<p className="state">There's no page here. <a href="/training">Go to Training</a>.</p>} />

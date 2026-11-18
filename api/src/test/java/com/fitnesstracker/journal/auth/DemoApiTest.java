@@ -13,7 +13,7 @@ import org.springframework.test.context.TestPropertySource;
 import com.fitnesstracker.journal.ApiTestBase;
 import com.fitnesstracker.journal.SessionClient;
 
-@TestPropertySource(properties = "app.demo-data=true")
+@TestPropertySource(properties = { "app.demo-data=true", "app.parse.provider=off" })
 class DemoApiTest extends ApiTestBase {
 
     @Autowired
@@ -37,6 +37,10 @@ class DemoApiTest extends ApiTestBase {
                 "activity", "LIGHT", "direction", "MAINTAIN"), Map.class).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(c.post("/api/food", Map.of("date", "2026-11-10", "meal", "LUNCH", "name", "X", "servings", 1,
                 "calories", 100), Map.class).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        // Describing an entry in words saves nothing either, so it gets past the read-only check
+        // (and here reports that parsing is off).
+        assertThat(c.post("/api/parse", Map.of("message", "ran 3 miles", "today", java.time.LocalDate.now().toString()),
+                Map.class).getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
         var write = c.post("/api/activities", Map.of("type", "RUN", "date", "2026-11-10", "title", "Mine"), Map.class);
         assertThat(write.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(write.getBody().get("detail").toString()).contains("read-only");

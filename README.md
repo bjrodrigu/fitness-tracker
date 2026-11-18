@@ -1,6 +1,6 @@
 # Training Journal
 
-A training log for running, lifting and eating. Each run or strength session is a journal entry with notes, and the dashboard turns them into weekly mileage, pace trends, best efforts and lift progression. Link a Garmin account and new runs come in on their own every few hours. On a phone it installs to the home screen and works like an app.
+A training log for running, lifting and eating. Each run or strength session is a journal entry with notes, which you can also just describe in a sentence, and the dashboard turns them into weekly mileage, pace trends, best efforts and lift progression. Link a Garmin account and new runs come in on their own every few hours. On a phone it installs to the home screen and works like an app.
 
 ![Training dashboard: summary numbers, an 8-week grid of daily miles with strength days marked, weekly mileage bars and an average pace line](docs/screenshots/training.png)
 
@@ -24,6 +24,7 @@ Open http://localhost:4000 and choose **Try the demo**. The demo account is read
 - **Goals and progress:** set a goal to lose, maintain or gain, with a target weight and pace. A calculator suggests daily calories and macros (Mifflin-St Jeor for maintenance, 500 kcal a day per pound a week, protein by body weight). It won't suggest losing more than 1% of body weight a week or eating below 1,200/1,500 kcal. Progress shows weigh-ins with a 7-day average, your actual rate over the last 4 weeks, a projected date, and daily calories against the target.
 - **Accounts:** sign up with an email and password. Each account sees only its own entries.
 - **Garmin sync:** link your Garmin account under Settings and the server pulls new runs and strength sessions every 6 hours (or when you tap Sync now). Entries are matched on Garmin's activity ID, so a sync never duplicates entries or overwrites the notes you wrote.
+- **Describe it:** type what you did the way you'd text a friend ("easy 4 miles, legs heavy, then bench 3x8 at 185, lunch was a turkey sandwich") and it drafts the entries: a run, sets added to today's lifting session, a meal with its macros. "The last bench set was only 6 reps" changes the set that's already there. You check and edit every draft before anything is saved. By default it runs on a local model, so messages never leave your computer.
 - **On your phone:** a bottom tab bar, a quick Log button, and a web app manifest, so Add to Home Screen gives it its own icon and opens it full screen.
 
 | Journal | Strength |
@@ -68,6 +69,7 @@ API endpoints (OpenAPI docs at http://localhost:4000/api/docs):
 | GET | `/api/nutrition?days=56` | Daily totals, weight with 7-day average, goal and progress |
 | PUT, POST | `/api/nutrition/goal`, `/api/nutrition/suggest` | Save the goal; work out suggested targets |
 | GET | `/api/foods/search?q=`, `/api/foods/barcode/{code}` | Search USDA and Open Food Facts; look up a barcode |
+| POST, GET | `/api/parse`, `/api/parse/status` | Turn a message into draft entries (saves nothing); which model is on |
 
 Every endpoint except `/api/auth/*` needs a signed-in session, and entries are always filtered by the session's account. Distances and times are stored as numbers (miles, seconds); pace and volume are worked out from them. Stats, nutrition progress and the goal calculator are plain Java over lists (`StatsCalculator`, `Progress`, `GoalCalculator`), which keeps them easy to unit test.
 
@@ -98,6 +100,32 @@ The API looks foods up in two free databases and caches answers for a day:
 - **Open Food Facts** for packaged foods and barcodes. No key needed. `FOOD_COUNTRY` (default `united-states`) picks which country's products search returns.
 
 Barcode scanning uses the browser's BarcodeDetector where there is one (Chrome on Android) and the [ZXing](https://github.com/zxing-js/browser) library otherwise (Safari on iPhone), loaded only when the camera opens. Browsers only allow the camera on https or localhost, so on a phone open the app through its Tailscale https address. You can always type the numbers under the barcode instead.
+
+## Describe it (local model)
+
+A language model reads the message, but only to pull out the facts: what kind of thing it is, the numbers, the exercise and food names. Everything after that is plain, tested code (`api/.../parse/DraftBuilder.java`):
+
+- Exercise names are matched to the ones you already use, so "bench" lands on "Bench press" and your Strength history doesn't split in two.
+- Sets go into today's lifting session if there is one. A correction finds the set or run it's about.
+- A run Garmin already synced gets your notes instead of being logged twice.
+- Each ingredient of a meal is looked up in the food databases above, and its macros worked out from the grams. Ingredients it can't find are flagged for you to search or remove.
+- Numbers a small model is prone to make up (a run time the message never gave) are dropped.
+
+By default the model is [Ollama](https://ollama.com) running `qwen2.5:3b` (a 1.9 GB download) on the same computer, outside Docker so it can use the GPU on a Mac:
+
+```sh
+brew install ollama && brew services start ollama
+ollama pull qwen2.5:3b
+```
+
+On an 8 GB M1 a message takes about 5 seconds, longer for the first one after a quiet spell while the model loads. If the journal is hosted somewhere without room for a local model, set `PARSE_PROVIDER=anthropic` and `ANTHROPIC_API_KEY` to use Claude instead (`ANTHROPIC_MODEL` picks which; the default is `claude-opus-5-5`). `PARSE_PROVIDER=off` turns it off, and the page says so.
+
+To see how well a model reads messages, run the sample messages through it (16 cases: runs, sets in lb and kg, corrections, meals, mixed messages):
+
+```sh
+cd api && PARSE_EVAL=1 ./mvnw test -Dtest=ParseEvalTest                         # qwen2.5:3b: 15 of 16
+cd api && PARSE_EVAL=1 OLLAMA_MODEL=llama3.2:3b ./mvnw test -Dtest=ParseEvalTest  # compare another model
+```
 
 ## Accounts and sessions
 
