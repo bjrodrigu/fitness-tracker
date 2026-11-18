@@ -18,12 +18,12 @@ export default function StrengthPage() {
 
   return (
     <>
-      <TrainingSwitch />
       <header className="page-head">
         <div>
           <h1>Strength</h1>
           <p>Estimated one-rep max per lift, from your best set each session.</p>
         </div>
+        <TrainingSwitch />
         <div className="page-actions">
           <Link className="btn primary" to="/entries/new?type=STRENGTH">Log a lift</Link>
         </div>

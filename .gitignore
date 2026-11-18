@@ -12,8 +12,7 @@ target/
 HELP.md
 
 # Library demo files kept locally for reference (not my code)
-example.py
-reference.ipynb
+reference/
 
 .DS_Store
 .idea/

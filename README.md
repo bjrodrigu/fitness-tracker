@@ -33,6 +33,10 @@ Open http://localhost:4000 and choose **Try the demo**. The demo account is read
 | **Food** | **Progress** |
 | ![Today's calories and macros left against the goal, then foods by meal](docs/screenshots/food.png) | ![Weight trend toward a goal, actual weekly rate and daily calories](docs/screenshots/food-progress.png) |
 
+Describe it turns a sentence into drafts to check. Here "pull ups" was matched to the Pull-up the journal already tracks:
+
+![Describe it: a message about an easy 4 mile run, bench 3x8 at 185 and pull-ups, turned into a run draft and a lifting draft with editable sets](docs/screenshots/describe.png)
+
 On a phone it has a bottom tab bar and installs to the home screen:
 
 ![Four phone screens: training log, today's food, searching the food database, and weight progress](docs/screenshots/phone.png)
@@ -46,124 +50,23 @@ loader/   Python: the garmin-sync service the API calls, plus a one-off import s
 ```
 
 ```
-Browser / phone ──► nginx (web) ──► /api/* ──► Spring Boot ──► MongoDB (users, activities, sessions)
-                                                   │  every 6 h, per linked account
-                                                   ▼
-                                       garmin-sync (Python, internal only) ──► Garmin Connect
+Browser / phone ──► nginx (web) ──► /api/* ──► Spring Boot ──► MongoDB (accounts, entries, food, sessions)
+                                                    │
+               ┌────────────────────────────────────┼─────────────────────────────┐
+               ▼ every 6 h, per linked account      ▼ food search                 ▼ Describe it
+   garmin-sync (Python, internal only)     USDA, Open Food Facts     Ollama on the host (or Claude)
+               │
+               ▼
+        Garmin Connect
 ```
 
-API endpoints (OpenAPI docs at http://localhost:4000/api/docs):
+The parts with rules in them (weekly stats, lift progression, the calorie calculator, weight progress, turning a parsed message into drafts) are plain Java over lists, with unit tests for each. The API tests run against a real MongoDB in Testcontainers.
 
-| Method | Path | |
-| --- | --- | --- |
-| POST | `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout`, `/api/auth/demo` | Accounts and sessions |
-| GET | `/api/auth/me` | The signed-in account, or 401 |
-| GET, POST, DELETE | `/api/garmin`, `/api/garmin/link`, `/api/garmin/link/code`, `/api/garmin/sync` | Garmin status, linking (with Garmin's emailed code), sync now, unlink |
-| GET | `/api/activities?type=&from=&to=&q=&tag=` | List entries, newest first. `q` searches titles, notes, tags and exercise names. |
-| GET, PUT, DELETE | `/api/activities/{id}` | Read, replace or delete one entry |
-| POST | `/api/activities` | Create an entry |
-| POST | `/api/activities/import` | Bulk upsert by `externalId` (used by the import script) |
-| GET | `/api/stats?weeks=16&days=140` | Weekly totals, best efforts, lift progression and daily miles |
-| GET, POST, PUT, DELETE | `/api/food?date=`, `/api/food/{id}`, `/api/food/recent` | Food log for a day, edit one food, recently eaten foods |
-| PUT, DELETE | `/api/weights/{date}` | One weigh-in per day |
-| GET | `/api/nutrition?days=56` | Daily totals, weight with 7-day average, goal and progress |
-| PUT, POST | `/api/nutrition/goal`, `/api/nutrition/suggest` | Save the goal; work out suggested targets |
-| GET | `/api/foods/search?q=`, `/api/foods/barcode/{code}` | Search USDA and Open Food Facts; look up a barcode |
-| POST, GET | `/api/parse`, `/api/parse/status` | Turn a message into draft entries (saves nothing); which model is on |
+More detail:
 
-Every endpoint except `/api/auth/*` needs a signed-in session, and entries are always filtered by the session's account. Distances and times are stored as numbers (miles, seconds); pace and volume are worked out from them. Stats, nutrition progress and the goal calculator are plain Java over lists (`StatsCalculator`, `Progress`, `GoalCalculator`), which keeps them easy to unit test.
-
-## Garmin sync
-
-Garmin has no public API for personal accounts, so the `garmin-sync` service signs in the way the Garmin Connect app does (with the [garminconnect](https://github.com/cyberjunky/python-garminconnect) library) and returns Garmin's login token to the API.
-
-1. Set `GARMIN_TOKEN_KEY` in `.env` (`openssl rand -base64 32`). Linking is off without it.
-2. In the app, open Settings and enter your Garmin email and password, plus the code Garmin sends if you use two-step sign-in.
-3. The first sync reads the past year. After that the API syncs every linked account every 6 hours (`GARMIN_SYNC_EVERY`).
-
-How the login is handled:
-
-- The Garmin password goes to Garmin once and is never stored or logged.
-- Garmin's token is stored encrypted with AES-256-GCM. The key lives only in the environment, and each token is tied to its account, so a token copied onto another account won't decrypt.
-- `garmin-sync` has no published port. Only the API can reach it, inside the Docker network.
-- If Garmin rejects the token later, syncing stops for that account and Settings asks you to link again.
-
-Only summary numbers are imported. GPS tracks, start locations and Garmin's activity names, which usually include the city, are left out. Strength sessions come in without sets, so you add those in the journal.
-
-For a one-off import from the command line, `loader/garmin_import.py --dry-run` prints what it would import, and without `--dry-run` it signs in to the journal and sends it.
-
-## Food search and barcodes
-
-The API looks foods up in two free databases and caches answers for a day:
-
-- **USDA FoodData Central** for whole foods ("banana", "chicken breast"), with household portions like "1 medium (118 g)". It needs a free key from [api.data.gov](https://api.data.gov/signup) in `FDC_API_KEY`; without one it allows only a few searches an hour.
-- **Open Food Facts** for packaged foods and barcodes. No key needed. `FOOD_COUNTRY` (default `united-states`) picks which country's products search returns.
-
-Barcode scanning uses the browser's BarcodeDetector where there is one (Chrome on Android) and the [ZXing](https://github.com/zxing-js/browser) library otherwise (Safari on iPhone), loaded only when the camera opens. Browsers only allow the camera on https or localhost, so on a phone open the app through its Tailscale https address. You can always type the numbers under the barcode instead.
-
-## Describe it (local model)
-
-A language model reads the message, but only to pull out the facts: what kind of thing it is, the numbers, the exercise and food names. Everything after that is plain, tested code (`api/.../parse/DraftBuilder.java`):
-
-- Exercise names are matched to the ones you already use, so "bench" lands on "Bench press" and your Strength history doesn't split in two.
-- Sets go into today's lifting session if there is one. A correction finds the set or run it's about.
-- A run Garmin already synced gets your notes instead of being logged twice.
-- Each ingredient of a meal is looked up in the food databases above, and its macros worked out from the grams. Ingredients it can't find are flagged for you to search or remove.
-- Numbers a small model is prone to make up (a run time the message never gave) are dropped.
-
-By default the model is [Ollama](https://ollama.com) running `qwen2.5:3b` (a 1.9 GB download) on the same computer, outside Docker so it can use the GPU on a Mac:
-
-```sh
-brew install ollama && brew services start ollama
-ollama pull qwen2.5:3b
-```
-
-On an 8 GB M1 a message takes about 5 seconds, longer for the first one after a quiet spell while the model loads. If the journal is hosted somewhere without room for a local model, set `PARSE_PROVIDER=anthropic` and `ANTHROPIC_API_KEY` to use Claude instead (`ANTHROPIC_MODEL` picks which; the default is `claude-opus-5-5`). `PARSE_PROVIDER=off` turns it off, and the page says so.
-
-To see how well a model reads messages, run the sample messages through it (16 cases: runs, sets in lb and kg, corrections, meals, mixed messages):
-
-```sh
-cd api && PARSE_EVAL=1 ./mvnw test -Dtest=ParseEvalTest                         # qwen2.5:3b: 15 of 16
-cd api && PARSE_EVAL=1 OLLAMA_MODEL=llama3.2:3b ./mvnw test -Dtest=ParseEvalTest  # compare another model
-```
-
-## Accounts and sessions
-
-- Passwords are hashed with bcrypt. After 8 wrong passwords, that email is locked for 15 minutes.
-- Sessions are HttpOnly cookies stored in MongoDB (Spring Session) and last 30 days, so a phone stays signed in.
-- Every POST, PUT and DELETE needs a CSRF token (double-submit cookie).
-- The demo account can read but not write.
-- Entries saved before accounts existed belong to the first account created on that database.
-
-## Using it on your phone
-
-The app is a normal website, so a phone needs a way to reach the computer running it. [Tailscale](https://tailscale.com) is the simplest private option. Install it on the computer and the phone, sign in to the same account on both, then on the computer run:
-
-```sh
-tailscale serve --bg 4000
-```
-
-That gives the app an HTTPS address on your tailnet, such as `https://your-mac.your-tailnet.ts.net`, which only your own devices can open. Open it in Safari or Chrome on the phone and choose Add to Home Screen.
-
-## Running the pieces separately
-
-```sh
-docker compose up mongo -d                  # or point MONGODB_URI at your own MongoDB
-cd api && DEMO_DATA=true SPRING_DATA_MONGODB_URI=mongodb://localhost:27017 ./mvnw spring-boot:run
-cd web && npm install && npm run dev       # http://localhost:5173, proxies /api to :8080
-```
-
-For local runs, expose Mongo with `ports: ["127.0.0.1:27017:27017"]` in a `docker-compose.override.yml`. To use MongoDB Atlas, set `MONGODB_URI` in `.env` for Compose, or `SPRING_DATA_MONGODB_URI` when running the API directly. An `application-secrets.properties` file next to `application.properties` also works and is gitignored. It's excluded from the Docker build.
-
-## Tests
-
-```sh
-cd api && ./mvnw verify          # unit tests + API tests against MongoDB via Testcontainers (needs Docker)
-cd web && npm test
-cd loader && pytest
-```
-
-CI runs all three plus a `docker compose up` smoke test that signs in to the demo through nginx.
+- [Setup and configuration](docs/setup.md): Garmin sync, food search keys, the local model for Describe it, using it on a phone, and every setting.
+- [API](docs/api.md): endpoints, sessions and CSRF, calling it from a script.
+- [Development](docs/development.md): running each piece on its own, tests, where the code lives.
 
 ## Background
 

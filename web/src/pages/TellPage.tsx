@@ -18,6 +18,19 @@ interface Card {
 
 const PLACEHOLDER = "Easy 4 miles this morning, legs felt heavy. Then bench 3x8 at 185. Lunch was a turkey sandwich.";
 
+const EXAMPLES = [
+  { label: "A run and a lift", text: "Easy 4 miles this morning in 38 min, legs felt heavy. Then bench 3x8 at 185 and 3 sets of 10 pull ups." },
+  { label: "Fixing something already logged", text: "Actually the last bench set was only 6 reps." },
+  { label: "A meal you cooked", text: "Made a chicken burrito bowl for dinner with rice, black beans, chicken, cheese and salsa." },
+];
+
+/** "Ollama qwen2.5:3b" -> where messages go, in words. */
+function modelLine(model: string) {
+  if (model.startsWith("Ollama ")) return `Messages are read by ${model.slice(7)}, a small model running on the computer that hosts this journal. They don't leave it.`;
+  if (model.startsWith("Claude ")) return `Messages are read by Claude (${model.slice(7)}) through the Anthropic API.`;
+  return null;
+}
+
 function macros(ing: Card["ingredients"][number]) {
   const f: FoodResult | undefined = ing.options[ing.pick];
   if (!f) return { kcal: 0, p: 0, c: 0, fat: 0 };
@@ -55,10 +68,11 @@ export default function TellPage() {
   const [saved, setSaved] = useState<{ count: number; food: boolean; training: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [model, setModel] = useState<string | null>(null);
   const box = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    parser.status().then((s) => setEnabled(s.enabled)).catch(() => setEnabled(null));
+    parser.status().then((s) => { setEnabled(s.enabled); setModel(s.model); }).catch(() => setEnabled(null));
   }, []);
 
   useEffect(() => {
@@ -203,6 +217,23 @@ export default function TellPage() {
 
       {notes.length > 0 && (
         <ul className="tell-notes">{notes.map((n) => <li key={n}>{n}</li>)}</ul>
+      )}
+
+      {cards.length === 0 && !reading && !saved && !message.trim() && enabled !== false && (
+        <section className="tell-examples" aria-label="Examples">
+          <h2>Things it understands</h2>
+          <ul>
+            {EXAMPLES.map((x) => (
+              <li key={x.label}>
+                <button type="button" onClick={() => { setMessage(x.text); box.current?.focus(); }}>
+                  <b>{x.label}</b>
+                  {x.text}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {model && modelLine(model) && <p className="muted tell-model">{modelLine(model)}</p>}
+        </section>
       )}
 
       {cards.length > 0 && (

@@ -18,12 +18,12 @@ export default function TrainingPage() {
 
   return (
     <>
-      <TrainingSwitch />
       <header className="page-head">
         <div>
           <h1>Training</h1>
           <p>{formatDate(s.asOf, { weekday: "long", month: "long", day: "numeric" })}</p>
         </div>
+        <TrainingSwitch />
         <div className="page-actions">
           <Link className="btn" to="/entries/new?type=STRENGTH">Log a lift</Link>
           <Link className="btn primary" to="/entries/new?type=RUN">Log a run</Link>

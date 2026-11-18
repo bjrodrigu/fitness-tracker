@@ -89,7 +89,6 @@ export default function Layout() {
           </div>
         )}
         <div className="sidebar-foot">
-          {user.demo && <p>Showing generated sample data. Nothing here is a real person's training.</p>}
           <div className="nav">
             <NavLink to="/settings">
               <span className="avatar" aria-hidden="true">{user.name.slice(0, 1).toUpperCase()}</span>
@@ -124,7 +123,12 @@ export default function Layout() {
           <Icon name="training" /><span>Training</span>
         </Link>
         <NavLink to="/journal"><Icon name="journal" /><span>Journal</span></NavLink>
-        {user.demo ? null : (
+        {user.demo ? (
+          <NavLink to="/tell" className="tab-log">
+            <span className="tab-log-ring"><Icon name="plus" /></span>
+            <span>Describe</span>
+          </NavLink>
+        ) : (
           <button type="button" className="tab-log" aria-haspopup="dialog" aria-expanded={sheet}
             onClick={() => setSheet(true)}>
             <span className="tab-log-ring"><Icon name="plus" /></span>
